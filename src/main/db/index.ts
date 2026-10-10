@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
-import { migrations } from './Migrations'
+import { migrations } from './migrations'
 
 let db: Database.Database | null = null
 

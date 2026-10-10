@@ -1,171 +1,55 @@
 @import './base.css';
 
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background-image: url('./wavy-lines.svg');
-  background-size: cover;
-  user-select: none;
-}
+/* Estilos mínimos para la pantalla de pruebas del Sprint 1.
+   Reemplazan los de la plantilla (que centraba todo y ocultaba el scroll).
+   La interfaz de verdad llega más adelante; esto solo sirve para verificar el escáner. */
 
-code {
-  font-weight: 600;
-  padding: 3px 5px;
-  border-radius: 2px;
-  background-color: var(--color-background-mute);
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    SF Mono,
-    Menlo,
-    Consolas,
-    Liberation Mono,
-    monospace;
-  font-size: 85%;
+body {
+  display: block;
+  overflow: auto;
+  user-select: text;
 }
 
 #root {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  margin-bottom: 80px;
-}
-
-.logo {
-  margin-bottom: 20px;
-  -webkit-user-drag: none;
-  height: 128px;
-  width: 128px;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.logo:hover {
-  filter: drop-shadow(0 0 1.2em #6988e6aa);
-}
-
-.creator {
-  font-size: 14px;
-  line-height: 16px;
-  color: var(--ev-c-text-2);
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.text {
-  font-size: 28px;
-  color: var(--ev-c-text-1);
-  font-weight: 700;
-  line-height: 32px;
-  text-align: center;
-  margin: 0 10px;
-  padding: 16px 0;
-}
-
-.tip {
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--ev-c-text-2);
-  font-weight: 600;
-}
-
-.react {
-  background: -webkit-linear-gradient(315deg, #087ea4 55%, #7c93ee);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-}
-
-.ts {
-  background: -webkit-linear-gradient(315deg, #3178c6 45%, #f0dc4e);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-}
-
-.actions {
-  display: flex;
-  padding-top: 32px;
-  margin: -6px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-.action {
-  flex-shrink: 0;
-  padding: 6px;
-}
-
-.action a {
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  border: 1px solid transparent;
-  text-align: center;
-  font-weight: 600;
-  white-space: nowrap;
-  border-radius: 20px;
-  padding: 0 20px;
-  line-height: 38px;
-  font-size: 14px;
-  border-color: var(--ev-button-alt-border);
-  color: var(--ev-button-alt-text);
-  background-color: var(--ev-button-alt-bg);
-}
-
-.action a:hover {
-  border-color: var(--ev-button-alt-hover-border);
-  color: var(--ev-button-alt-hover-text);
-  background-color: var(--ev-button-alt-hover-bg);
-}
-
-.versions {
-  position: absolute;
-  bottom: 30px;
+  max-width: 880px;
   margin: 0 auto;
-  padding: 15px 0;
-  font-family: 'Menlo', 'Lucida Console', monospace;
-  display: inline-flex;
-  overflow: hidden;
-  align-items: center;
-  border-radius: 22px;
-  background-color: #202127;
-  backdrop-filter: blur(24px);
+  padding: 28px 24px 60px;
 }
 
-.versions li {
-  display: block;
-  float: left;
-  border-right: 1px solid var(--ev-c-gray-1);
-  padding: 0 20px;
-  font-size: 14px;
-  line-height: 14px;
-  opacity: 0.8;
-  &:last-child {
-    border: none;
-  }
-}
+h1 { font-size: 22px; margin-bottom: 4px; }
+h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ev-c-text-2); margin: 28px 0 10px; }
+.muted { color: var(--ev-c-text-2); font-size: 13px; }
+.mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
 
-@media (max-width: 720px) {
-  .text {
-    font-size: 20px;
-  }
+button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ev-c-text-1);
+  background: var(--ev-c-gray-3);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
 }
+button:hover:not(:disabled) { background: var(--ev-c-gray-2); }
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { background: #4a6fd1; }
+button.primary:hover:not(:disabled) { background: #5a7fe1; }
 
-@media (max-width: 620px) {
-  .versions {
-    display: none;
-  }
-}
+.panel { background: var(--color-background-soft); border: 1px solid var(--ev-c-gray-3); border-radius: 8px; }
+.folder { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--ev-c-gray-3); }
+.folder:last-child { border-bottom: none; }
+.folder .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-@media (max-width: 350px) {
-  .tip,
-  .actions {
-    display: none;
-  }
-}
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); }
+.stat { padding: 14px; border-right: 1px solid var(--ev-c-gray-3); }
+.stat:last-child { border-right: none; }
+.stat b { display: block; font-size: 24px; font-weight: 600; }
+
+progress { width: 100%; height: 8px; margin: 10px 0 6px; }
+.notice { padding: 10px 14px; border-radius: 6px; margin-top: 14px; font-size: 13px; }
+.notice.error { background: #5a2a2a; }
+.notice.ok { background: #25402c; }
+.errors { max-height: 220px; overflow: auto; padding: 8px 14px; }
+.errors li { list-style: none; padding: 6px 0; border-bottom: 1px solid var(--ev-c-gray-3); }
+.errors li:last-child { border-bottom: none; }
