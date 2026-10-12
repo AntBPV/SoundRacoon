@@ -26,6 +26,11 @@ export interface ScanOptions {
   onProgress?: (progress: ScanProgress) => void
   /** Para cancelar: el escaneo termina limpiamente y el índice queda consistente. */
   signal?: AbortSignal
+  /**
+   * Relee TODOS los archivos aunque no hayan cambiado. Actualiza las filas en su sitio
+   * (conservan su id), así que playlists o historial futuros no se rompen.
+   */
+  force?: boolean
 }
 
 interface DiscoveredFile {
@@ -50,6 +55,12 @@ const BATCH_SIZE = 100 // pistas por transacción: escribir de a una sería lent
 const PROGRESS_EVERY = 10 // cada cuántos archivos se avisa a la interfaz
 
 const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+
+/** Los errores de lectura del sistema operativo traen un código tipo EBUSY, EACCES, ENOENT... */
+export function isSystemError(err: unknown): boolean {
+  const code = (err as NodeJS.ErrnoException | null | undefined)?.code
+  return typeof code === 'string' && /^E[A-Z0-9]+$/.test(code)
+}
 
 /**
  * Recorre `root` y devuelve todos los archivos de audio con su tamaño y fecha.
@@ -100,17 +111,19 @@ function createTrackSaver(db: Database.Database, folderId: number): (item: Pendi
   const findArtist = db.prepare('SELECT id FROM artists WHERE name = ?')
   const insertArtist = db.prepare('INSERT INTO artists (name) VALUES (?)')
   const findAlbum = db.prepare('SELECT id FROM albums WHERE title = ? AND album_artist_id IS ?')
-  const insertAlbum = db.prepare('INSERT INTO albums (title, album_artist_id, year) VALUES (?, ?, ?)')
+  const insertAlbum = db.prepare(
+    'INSERT INTO albums (title, album_artist_id, year) VALUES (?, ?, ?)'
+  )
   const fillAlbumYear = db.prepare('UPDATE albums SET year = ? WHERE id = ? AND year IS NULL')
 
   const insertTrack = db.prepare(`
     INSERT INTO tracks (
       folder_id, album_id, artist_id, file_path, file_size, file_mtime_ms,
-      title, track_no, disc_no, has_tags, has_cover,
+      title, track_no, disc_no, year, has_tags, has_cover,
       duration_sec, codec, lossless, bitrate, sample_rate, bit_depth
     ) VALUES (
       @folderId, @albumId, @artistId, @filePath, @fileSize, @fileMtimeMs,
-      @title, @trackNo, @discNo, @hasTags, @hasCover,
+      @title, @trackNo, @discNo, @year, @hasTags, @hasCover,
       @durationSec, @codec, @lossless, @bitrate, @sampleRate, @bitDepth
     )`)
 
@@ -118,7 +131,7 @@ function createTrackSaver(db: Database.Database, folderId: number): (item: Pendi
     UPDATE tracks SET
       album_id = @albumId, artist_id = @artistId,
       file_path = @filePath, file_size = @fileSize, file_mtime_ms = @fileMtimeMs,
-      title = @title, track_no = @trackNo, disc_no = @discNo,
+      title = @title, track_no = @trackNo, disc_no = @discNo, year = @year,
       has_tags = @hasTags, has_cover = @hasCover,
       duration_sec = @durationSec, codec = @codec, lossless = @lossless,
       bitrate = @bitrate, sample_rate = @sampleRate, bit_depth = @bitDepth,
@@ -131,7 +144,11 @@ function createTrackSaver(db: Database.Database, folderId: number): (item: Pendi
     return row ? row.id : Number(insertArtist.run(name).lastInsertRowid)
   }
 
-  const resolveAlbum = (title: string | null, artistId: number | null, year: number | null): number | null => {
+  const resolveAlbum = (
+    title: string | null,
+    artistId: number | null,
+    year: number | null
+  ): number | null => {
     if (!title) return null
     const row = findAlbum.get(title, artistId) as { id: number } | undefined
     const id = row ? row.id : Number(insertAlbum.run(title, artistId, year).lastInsertRowid)
@@ -157,6 +174,7 @@ function createTrackSaver(db: Database.Database, folderId: number): (item: Pendi
       title: meta.title,
       trackNo: meta.trackNo,
       discNo: meta.discNo,
+      year: meta.year,
       hasTags: meta.hasTags ? 1 : 0,
       hasCover: meta.hasCover ? 1 : 0,
       durationSec: meta.durationSec,
@@ -175,7 +193,8 @@ function createTrackSaver(db: Database.Database, folderId: number): (item: Pendi
 /**
  * Escanea una carpeta raíz ya registrada y sincroniza el índice con lo que hay en disco.
  *
- * - Incremental: si un archivo conserva tamaño y fecha de modificación, no se vuelve a leer.
+ * - Incremental: si un archivo conserva tamaño y fecha de modificación, no se vuelve a leer
+ *   (salvo con `force`, que relee todo).
  * - Un archivo ilegible se anota en `scan_errors` y el escaneo continúa.
  * - Cancelable: al cancelar se guarda lo ya leído y NO se elimina nada del índice.
  * - Seguro: si la carpeta raíz no es accesible, lanza el error sin modificar el índice.
@@ -185,11 +204,10 @@ export async function scanFolder(
   folderId: number,
   options: ScanOptions = {}
 ): Promise<ScanResult> {
-  const { onProgress, signal } = options
+  const { onProgress, signal, force = false } = options
 
   const folder = db.prepare('SELECT id, path FROM folders WHERE id = ?').get(folderId) as
-    | { id: number; path: string }
-    | undefined
+    { id: number; path: string } | undefined
   if (!folder) throw new Error(`La carpeta ${folderId} no está registrada en la biblioteca.`)
 
   const result: ScanResult = {
@@ -202,7 +220,9 @@ export async function scanFolder(
     cancelled: false
   }
 
-  const insertError = db.prepare('INSERT INTO scan_errors (folder_id, file_path, message) VALUES (?, ?, ?)')
+  const insertError = db.prepare(
+    'INSERT INTO scan_errors (folder_id, file_path, message) VALUES (?, ?, ?)'
+  )
   const logError = (filePath: string, message: string): void => {
     insertError.run(folderId, filePath, message)
     result.errors++
@@ -225,7 +245,11 @@ export async function scanFolder(
     .prepare('SELECT id, file_path, file_size, file_mtime_ms FROM tracks WHERE folder_id = ?')
     .all(folderId) as { id: number; file_path: string; file_size: number; file_mtime_ms: number }[]
   for (const r of rows) {
-    existing.set(r.file_path.toLowerCase(), { id: r.id, size: r.file_size, mtimeMs: r.file_mtime_ms })
+    existing.set(r.file_path.toLowerCase(), {
+      id: r.id,
+      size: r.file_size,
+      mtimeMs: r.file_mtime_ms
+    })
   }
 
   const stillOnDisk = new Set<number>()
@@ -246,7 +270,10 @@ export async function scanFolder(
     const previous = existing.get(file.path.toLowerCase())
     if (previous) stillOnDisk.add(previous.id)
 
-    if (previous && previous.size === file.size && previous.mtimeMs === file.mtimeMs) {
+    const unchanged =
+      !force && previous && previous.size === file.size && previous.mtimeMs === file.mtimeMs
+
+    if (unchanged) {
       result.unchanged++
     } else {
       try {
@@ -256,6 +283,10 @@ export async function scanFolder(
         else result.added++
       } catch (err) {
         logError(file.path, errorMessage(err))
+        // Si el archivo YA no es audio válido (error de formato), su fila anterior describe
+        // algo que ya no existe y se retira del índice. Un error del sistema (archivo
+        // bloqueado, disco con problemas) puede ser pasajero: ahí se conserva la fila.
+        if (previous && !isSystemError(err)) stillOnDisk.delete(previous.id)
       }
     }
 
@@ -264,7 +295,12 @@ export async function scanFolder(
       batch = []
     }
     if (i % PROGRESS_EVERY === 0) {
-      onProgress?.({ phase: 'reading', processed: i + 1, total: files.length, currentFile: file.path })
+      onProgress?.({
+        phase: 'reading',
+        processed: i + 1,
+        total: files.length,
+        currentFile: file.path
+      })
     }
   }
   if (batch.length > 0) flush(batch)
@@ -290,7 +326,12 @@ export async function scanFolder(
 
     pruneOrphans(db)
     db.prepare("UPDATE folders SET last_scan_at = datetime('now') WHERE id = ?").run(folderId)
-    onProgress?.({ phase: 'reading', processed: files.length, total: files.length, currentFile: null })
+    onProgress?.({
+      phase: 'reading',
+      processed: files.length,
+      total: files.length,
+      currentFile: null
+    })
   }
 
   return result

@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
 import { migrations } from './migrations'
+import { foldText, baseName } from './text'
 
 let db: Database.Database | null = null
 
@@ -14,6 +15,16 @@ export function initDb(): Database.Database {
 
   db.pragma('journal_mode = WAL') // mejor rendimiento en escrituras masivas (escaneo)
   db.pragma('foreign_keys = ON') // SQLite lo trae apagado por defecto
+
+  db.function('fold', { deterministic: true }, (value: string | null) => {
+    if (value === null) return null
+    return foldText(value)
+  })
+
+  db.function('file_name', { deterministic: true }, (path: string | null) => {
+    if (path === null) return null
+    return baseName(path)
+  })
 
   runMigrations(db)
   console.log(`[db] lista en ${dbPath}`)

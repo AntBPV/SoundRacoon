@@ -7,14 +7,18 @@ const api = {
   listFolders: () => ipcRenderer.invoke('folders:list'),
   pickAndAddFolder: () => ipcRenderer.invoke('folders:pick-and-add'),
   removeFolder: (folderId: number) => ipcRenderer.invoke('folders:remove', folderId),
-  startScan: (folderId: number) => ipcRenderer.invoke('scan:start', folderId),
+  startScan: (folderId: number, options?: { force?: boolean }) =>
+    ipcRenderer.invoke('scan:start', { folderId, force: options?.force ?? false }),
   cancelScan: () => ipcRenderer.invoke('scan:cancel'),
   getScanErrors: (folderId: number) => ipcRenderer.invoke('scan:errors', folderId),
   getLibraryStats: () => ipcRenderer.invoke('library:stats'),
+  getTracks: (query: unknown) => ipcRenderer.invoke('library:tracks', query),
+  getAllScanErrors: () => ipcRenderer.invoke('library:errors'),
 
   /** Suscribe a los avisos de progreso. Devuelve la función para cancelar la suscripción. */
   onScanProgress: (callback: (progress: unknown) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, progress: unknown): void => callback(progress)
+    const listener = (_event: Electron.IpcRendererEvent, progress: unknown): void =>
+      callback(progress)
     ipcRenderer.on('scan:progress', listener)
     return () => {
       ipcRenderer.removeListener('scan:progress', listener)

@@ -85,5 +85,15 @@ export const migrations: Migration[] = [
 
       CREATE INDEX idx_scan_errors_folder ON scan_errors (folder_id);
     `
+  },
+  {
+    version: 2,
+    description: 'Año de lanzamiento por pista (antes solo se guardaba en el álbum)',
+    // Las pistas ya guardadas quedan con year = NULL hasta que se las relea
+    // con "Reescanear todo": el escaneo incremental no toca archivos sin cambios.
+    sql: `
+      ALTER TABLE tracks ADD COLUMN year INTEGER;
+    `
+
   }
 ]

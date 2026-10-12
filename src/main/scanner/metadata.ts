@@ -51,6 +51,11 @@ function cleanNumber(value: number | undefined): number | null {
 export async function extractMetadata(filePath: string): Promise<ExtractedTrack> {
   const { common, format } = await parseFile(filePath)
 
+  if (format.hasAudio === false || (!format.codec && !format.container)) {
+    throw new Error('No se encontró audio reconocible en el archivo (¿está vacío o dañado?)')
+  }
+
+
   const title = cleanText(common.title)
   const artist = cleanText(common.artist)
   const albumArtist = cleanText(common.albumartist)
