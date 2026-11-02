@@ -1,9 +1,21 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { appendFileSync, promises as fs } from 'node:fs'
+import { extname, join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { closeDb, initDb } from './db'
 import { registerIpc } from './ipc'
+
+function logMedia(message: string): void {
+  const line = `[${new Date().toISOString()}] ${message}\n`
+  console.log(`[media] ${message}`)
+  try {
+    const logPath = join(app.getPath('userData'), 'soundracoon-media.log')
+    appendFileSync(logPath, line)
+  } catch (error) {
+    console.error('[media] Unable to write media log:', error)
+  }
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -40,10 +52,27 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   initDb()
 
   registerIpc()
+  ipcMain.handle('media:data', async (_event, filePath: string) => {
+    const extension = extname(filePath).toLowerCase()
+    const mediaTypes: Record<string, string> = {
+      '.mp3': 'audio/mpeg',
+      '.flac': 'audio/flac',
+      '.m4a': 'audio/mp4',
+      '.ogg': 'audio/ogg',
+      '.opus': 'audio/ogg',
+      '.wav': 'audio/wav'
+    }
+    const mimeType = mediaTypes[extension]
+    if (!mimeType) throw new Error(`Extensión multimedia no compatible: ${extension || '(sin extensión)'}`)
+
+    const data = await fs.readFile(filePath)
+    logMedia(`Read media file: ${filePath} type=${mimeType} bytes=${data.byteLength}`)
+    return { data, mimeType }
+  })
   
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
@@ -57,6 +86,10 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  console.log(`[media] Diagnostic log: ${join(app.getPath('userData'), 'soundracoon-media.log')}`)
+  ipcMain.on('media:error', (_event, details: unknown) => {
+    logMedia(`Renderer error: ${JSON.stringify(details)}`)
+  })
 
   createWindow()
 

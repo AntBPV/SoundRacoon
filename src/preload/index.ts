@@ -14,6 +14,10 @@ const api = {
   getLibraryStats: () => ipcRenderer.invoke('library:stats'),
   getTracks: (query: unknown) => ipcRenderer.invoke('library:tracks', query),
   getAllScanErrors: () => ipcRenderer.invoke('library:errors'),
+  getTrackData: (filePath: string) => ipcRenderer.invoke('media:data', filePath),
+  reportMediaError: (details: unknown) => {
+    ipcRenderer.send('media:error', details)
+  },
 
   /** Suscribe a los avisos de progreso. Devuelve la función para cancelar la suscripción. */
   onScanProgress: (callback: (progress: unknown) => void) => {

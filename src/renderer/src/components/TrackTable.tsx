@@ -9,6 +9,7 @@ const HEADER_HEIGHT = 34
 
 /** sortKey null = columna informativa que no se puede ordenar. numeric = alineada a la derecha. */
 const COLUMNS: { sortKey: TrackSortKey | null; label: string; numeric?: boolean }[] = [
+  { sortKey: null, label: '' },
   { sortKey: null, label: '#', numeric: true },
   { sortKey: null, label: 'Disco', numeric: true },
   { sortKey: 'title', label: 'Título' },
@@ -26,13 +27,27 @@ interface Props {
   /** Cambia cuando el índice cambió: fuerza a recargar. */
   version: number
   onSort: (key: TrackSortKey) => void
+  onPlay: (track: TrackRow) => void
 }
 
 /** Las celdas de una pista, en el mismo orden que COLUMNS. */
-function TrackCells({ row }: { row: TrackRow }): React.JSX.Element {
+function TrackCells({
+  row,
+  onPlay
+}: {
+  row: TrackRow
+  onPlay: (track: TrackRow) => void
+}): React.JSX.Element {
   const dash = <span className="trk-dim">—</span>
   return (
     <>
+      <button
+        className="trk-play"
+        onClick={() => onPlay(row)}
+        aria-label={`Reproducir ${row.title ?? fileName(row.filePath)}`}
+      >
+        ▶
+      </button>
       <span className="trk-num">{row.trackNo ?? dash}</span>
       <span className="trk-num">{row.discNo ?? dash}</span>
       {/* Sin título en los tags: se muestra el nombre del archivo, atenuado. */}
@@ -62,7 +77,7 @@ function TrackCells({ row }: { row: TrackRow }): React.JSX.Element {
   )
 }
 
-export function TrackTable({ query, version, onSort }: Props): React.JSX.Element {
+export function TrackTable({ query, version, onSort, onPlay }: Props): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null)
   // Rango de páginas que se ven en pantalla; lo actualiza la lista virtual al hacer scroll.
   const [visible, setVisible] = useState({ start: 0, end: 0 })
@@ -139,7 +154,11 @@ export function TrackTable({ query, version, onSort }: Props): React.JSX.Element
                   transform: `translateY(${item.start - HEADER_HEIGHT}px)`
                 }}
               >
-                {row ? <TrackCells row={row} /> : <span className="trk-dim">…</span>}
+                {row ? (
+                  <TrackCells row={row} onPlay={onPlay} />
+                ) : (
+                  <span className="trk-dim">…</span>
+                )}
               </div>
             )
           })}

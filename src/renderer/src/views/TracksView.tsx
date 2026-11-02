@@ -9,7 +9,13 @@ type Section = 'all' | 'untagged' | 'errors'
 const SEARCH_DELAY_MS = 250
 
 /** Lista de todas las pistas indexadas, con búsqueda, filtros y orden. Solo lectura. */
-export function TracksView({ version }: { version: number }): React.JSX.Element {
+export function TracksView({
+  version,
+  onPlay
+}: {
+  version: number
+  onPlay: (track: TrackRow) => void
+}): React.JSX.Element {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [section, setSection] = useState<Section>('all')
@@ -89,7 +95,7 @@ export function TracksView({ version }: { version: number }): React.JSX.Element 
       {section === 'errors' ? (
         <ErrorTable version={version} />
       ) : (
-        <TrackTable query={query} version={version} onSort={toggleSort} />
+        <TrackTable query={query} version={version} onSort={toggleSort} onPlay={onPlay} />
       )}
     </div>
   )

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { PlayerBar } from './components/PlayerBar'
 import { LibraryView } from './views/LibraryView'
 import { TracksView } from './views/TracksView'
 
@@ -15,6 +16,7 @@ const TABS: { id: Tab; label: string }[] = [
  */
 function App(): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('library')
+  const [activeTrack, setActiveTrack] = useState<TrackRow | null>(null)
   // Sube cada vez que el índice cambia; las vistas que lo reciben recargan sus datos.
   const [libraryVersion, setLibraryVersion] = useState(0)
   const onLibraryChanged = useCallback(() => setLibraryVersion((v) => v + 1), [])
@@ -40,8 +42,9 @@ function App(): React.JSX.Element {
         <LibraryView onLibraryChanged={onLibraryChanged} />
       </main>
       <main className="view" hidden={tab !== 'tracks'}>
-        <TracksView version={libraryVersion} />
+        <TracksView version={libraryVersion} onPlay={setActiveTrack} />
       </main>
+      <PlayerBar track={activeTrack} />
     </>
   )
 }

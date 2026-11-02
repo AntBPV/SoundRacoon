@@ -112,5 +112,10 @@ interface CatalogarApi {
   getTracks: (query: TrackQuery) => Promise<IpcResult<TrackPage>>
   /** Todos los archivos con error de todas las carpetas, sin importar cuándo se escanearon. */
   getAllScanErrors: () => Promise<IpcResult<LibraryErrors>>
+  /** Lee una pista para crear una URL blob reproducible por el renderer. */
+  getTrackData: (
+    filePath: string
+  ) => Promise<{ data: Uint8Array; mimeType: string }>
+  reportMediaError: (details: unknown) => void
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void
 }
