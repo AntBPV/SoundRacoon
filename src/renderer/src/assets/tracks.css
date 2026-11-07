@@ -66,12 +66,12 @@
 .trk-grid {
   display: grid;
   grid-template-columns:
-    38px 52px 56px minmax(180px, 2fr) minmax(130px, 1.4fr) minmax(130px, 1.4fr)
+    38px 54px 52px 56px minmax(180px, 2fr) minmax(130px, 1.4fr) minmax(130px, 1.4fr)
     56px 76px 120px 70px minmax(220px, 2.6fr);
   column-gap: 12px;
   align-items: center;
   padding: 0 14px;
-  min-width: 1270px;
+  min-width: 1324px;
 }
 
 .trk-header {
@@ -107,7 +107,7 @@ button.trk-th:hover:not(:disabled) {
 
 .trk-body {
   position: relative;
-  min-width: 1270px;
+  min-width: 1324px;
 }
 .trk-row {
   position: absolute;
@@ -141,6 +141,11 @@ button.trk-th:hover:not(:disabled) {
   border-radius: 50%;
   font-size: 11px;
   line-height: 1;
+}
+.trk-identify {
+  justify-self: end;
+  padding: 3px 5px;
+  font-size: 10px;
 }
 .trk-dim {
   color: var(--ev-c-text-3);

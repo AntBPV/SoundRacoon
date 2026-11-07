@@ -14,6 +14,7 @@ const api = {
   getLibraryStats: () => ipcRenderer.invoke('library:stats'),
   getTracks: (query: unknown) => ipcRenderer.invoke('library:tracks', query),
   getAllScanErrors: () => ipcRenderer.invoke('library:errors'),
+  lookupAcoustId: (filePath: string) => ipcRenderer.invoke('acoustid:lookup', filePath),
   getTrackData: (filePath: string) => ipcRenderer.invoke('media:data', filePath),
   reportMediaError: (details: unknown) => {
     ipcRenderer.send('media:error', details)

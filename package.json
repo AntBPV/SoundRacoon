@@ -37,6 +37,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@tanstack/react-virtual": "^3.14.17",
     "better-sqlite3": "^13.0.3",
+    "dotenv": "^18.0.9",
     "electron-updater": "^6.3.9",
     "music-metadata": "^12.1.0",
     "node-taglib-sharp": "^6.0.3"

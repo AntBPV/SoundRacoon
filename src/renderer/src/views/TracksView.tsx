@@ -55,6 +55,12 @@ export function TracksView({
         : { sortBy: key, sortDir: 'asc' }
     )
 
+  const identifyTrack = async (track: TrackRow): Promise<void> => {
+    const result = await window.api.lookupAcoustId(track.filePath)
+    if (result.ok) console.log('[acoustid] Resultado recibido:', result.data)
+    else console.error(`[acoustid] No se pudo consultar ${track.filePath}: ${result.error}`)
+  }
+
   const sections: { id: Section; label: string; count: number | undefined }[] = [
     { id: 'all', label: 'Todas', count: stats?.tracks },
     { id: 'untagged', label: 'Sin tags', count: stats?.tracksWithoutTags },
@@ -95,7 +101,13 @@ export function TracksView({
       {section === 'errors' ? (
         <ErrorTable version={version} />
       ) : (
-        <TrackTable query={query} version={version} onSort={toggleSort} onPlay={onPlay} />
+        <TrackTable
+          query={query}
+          version={version}
+          onSort={toggleSort}
+          onPlay={onPlay}
+          onIdentify={identifyTrack}
+        />
       )}
     </div>
   )

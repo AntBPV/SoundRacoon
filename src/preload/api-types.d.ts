@@ -17,7 +17,7 @@ interface FolderRow {
 }
 
 interface ScanProgress {
-  phase: 'discovering' | 'reading'
+  phase: 'discovering' | 'reading' | 'identifying'
   processed: number
   total: number
   currentFile: string | null
@@ -99,6 +99,13 @@ interface LibraryErrors {
   rows: LibraryErrorRow[]
 }
 
+interface AcoustIdLookup {
+  status: string
+  results: unknown[]
+  duration: number
+  fingerprint: string
+}
+
 interface CatalogarApi {
   listFolders: () => Promise<IpcResult<FolderRow[]>>
   /** data es null si el usuario cierra el diálogo sin elegir nada. */
@@ -112,10 +119,10 @@ interface CatalogarApi {
   getTracks: (query: TrackQuery) => Promise<IpcResult<TrackPage>>
   /** Todos los archivos con error de todas las carpetas, sin importar cuándo se escanearon. */
   getAllScanErrors: () => Promise<IpcResult<LibraryErrors>>
+  /** Calcula la huella con fpcalc y consulta AcoustID; no modifica el archivo. */
+  lookupAcoustId: (filePath: string) => Promise<IpcResult<AcoustIdLookup>>
   /** Lee una pista para crear una URL blob reproducible por el renderer. */
-  getTrackData: (
-    filePath: string
-  ) => Promise<{ data: Uint8Array; mimeType: string }>
+  getTrackData: (filePath: string) => Promise<{ data: Uint8Array; mimeType: string }>
   reportMediaError: (details: unknown) => void
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void
 }

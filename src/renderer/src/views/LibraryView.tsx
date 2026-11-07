@@ -169,11 +169,22 @@ export function LibraryView({ onLibraryChanged }: Props): React.JSX.Element {
         {busy && (
           <div className="panel" style={{ padding: 14, marginTop: 14 }}>
             <div>
-              {progress?.phase === 'reading'
-                ? `Leyendo ${progress.processed} de ${progress.total} archivos (${percent}%)`
-                : 'Buscando archivos de audio…'}
+              {progress?.phase === 'identifying'
+                ? `Consultando AcoustID: ${progress.processed} de ${progress.total} pistas sin tags`
+                : progress?.phase === 'reading'
+                  ? `Leyendo ${progress.processed} de ${progress.total} archivos (${percent}%)`
+                  : 'Buscando archivos de audio…'}
             </div>
-            <progress max={100} value={progress?.phase === 'reading' ? percent : undefined} />
+            <progress
+              max={100}
+              value={
+                progress?.phase === 'reading'
+                  ? percent
+                  : progress?.phase === 'identifying' && progress.total > 0
+                    ? Math.round((progress.processed / progress.total) * 100)
+                    : undefined
+              }
+            />
             <div
               className="muted mono"
               style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}

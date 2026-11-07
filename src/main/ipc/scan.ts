@@ -1,4 +1,5 @@
 import { getDb } from '../db'
+import { identifyUntaggedTracks } from '../acoustid'
 import { scanFolder } from '../scanner/scanner'
 import { handle } from './handle'
 import { scanState } from './scan-state'
@@ -10,13 +11,25 @@ export function registerScanIpc(): void {
     const controller = new AbortController()
     scanState.current = { folderId, controller }
     try {
-      return await scanFolder(getDb(), folderId, {
+      const result = await scanFolder(getDb(), folderId, {
         signal: controller.signal,
         force,
         onProgress: (progress) => {
           if (!event.sender.isDestroyed()) event.sender.send('scan:progress', progress)
         }
       })
+      if (!result.cancelled) {
+        await identifyUntaggedTracks(getDb(), folderId, {
+          signal: controller.signal,
+          onProgress: (progress) => {
+            if (!event.sender.isDestroyed()) {
+              event.sender.send('scan:progress', { phase: 'identifying', ...progress })
+            }
+          }
+        })
+      }
+      if (controller.signal.aborted) result.cancelled = true
+      return result
     } finally {
       scanState.current = null
     }

@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { appendFileSync, promises as fs } from 'node:fs'
 import { extname, join } from 'path'
+import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { closeDb, initDb } from './db'
@@ -14,6 +15,16 @@ function logMedia(message: string): void {
     appendFileSync(logPath, line)
   } catch (error) {
     console.error('[media] Unable to write media log:', error)
+  }
+}
+
+function loadEnvironment(): void {
+  const envPath = app.isPackaged
+    ? join(app.getPath('userData'), '.env')
+    : join(process.cwd(), '.env')
+  const result = dotenv.config({ path: envPath })
+  if (result.error && result.error.code !== 'ENOENT') {
+    console.error(`[config] No se pudo cargar ${envPath}:`, result.error.message)
   }
 }
 
@@ -53,6 +64,7 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
+  loadEnvironment()
   initDb()
 
   registerIpc()
@@ -67,13 +79,14 @@ app.whenReady().then(async () => {
       '.wav': 'audio/wav'
     }
     const mimeType = mediaTypes[extension]
-    if (!mimeType) throw new Error(`Extensión multimedia no compatible: ${extension || '(sin extensión)'}`)
+    if (!mimeType)
+      throw new Error(`Extensión multimedia no compatible: ${extension || '(sin extensión)'}`)
 
     const data = await fs.readFile(filePath)
     logMedia(`Read media file: ${filePath} type=${mimeType} bytes=${data.byteLength}`)
     return { data, mimeType }
   })
-  
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -98,10 +111,9 @@ app.whenReady().then(async () => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
-
 })
 
-  app.on('before-quit', closeDb)
+app.on('before-quit', closeDb)
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

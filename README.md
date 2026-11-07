@@ -14,6 +14,15 @@ An Electron application with React and TypeScript
 $ npm install
 ```
 
+## Identificación con AcoustID
+
+Coloca `fpcalc.exe` en `resources/fpcalc.exe` para desarrollo y distribución, o define
+`FPCALC_PATH` con una ruta alternativa. Crea un archivo `.env` en la raíz del proyecto
+y configura allí `ACOUSTID_API_KEY`. En una aplicación distribuida, el archivo `.env`
+debe estar en la carpeta de datos de usuario de Electron. En la tabla de pistas, el
+botón `ID` calcula la huella con `fpcalc` y consulta AcoustID; esta etapa solo muestra
+el resultado en la consola y todavía no escribe metadatos.
+
 ### Development
 
 ```bash
