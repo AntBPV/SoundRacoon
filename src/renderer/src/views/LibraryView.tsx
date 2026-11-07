@@ -29,6 +29,8 @@ export function LibraryView({ onLibraryChanged }: Props): React.JSX.Element {
   const [lastResult, setLastResult] = useState<ScanResult | null>(null)
   const [scanErrors, setScanErrors] = useState<ScanErrorRow[]>([])
   const [message, setMessage] = useState<string | null>(null)
+  const [pendingCandidates, setPendingCandidates] = useState<AcoustIdCandidate[]>([])
+  const [pendingFolderId, setPendingFolderId] = useState<number | null>(null)
 
   const refresh = useCallback(async () => {
     const library = await fetchLibrary()
@@ -55,12 +57,18 @@ export function LibraryView({ onLibraryChanged }: Props): React.JSX.Element {
       setMessage(null)
       setLastResult(null)
       setScanErrors([])
+      setPendingCandidates([])
+      setPendingFolderId(null)
       setScanningId(folderId)
       const result = await window.api.startScan(folderId, { force })
       setScanningId(null)
       setProgress(null)
       if (result.ok) {
         setLastResult(result.data)
+        if (result.data.acoustIdCandidates.length > 0) {
+          setPendingCandidates(result.data.acoustIdCandidates)
+          setPendingFolderId(folderId)
+        }
         const errs = await window.api.getScanErrors(folderId)
         if (errs.ok) setScanErrors(errs.data)
       } else {
@@ -169,11 +177,22 @@ export function LibraryView({ onLibraryChanged }: Props): React.JSX.Element {
         {busy && (
           <div className="panel" style={{ padding: 14, marginTop: 14 }}>
             <div>
-              {progress?.phase === 'reading'
-                ? `Leyendo ${progress.processed} de ${progress.total} archivos (${percent}%)`
-                : 'Buscando archivos de audio…'}
+              {progress?.phase === 'identifying'
+                ? `Consultando AcoustID: ${progress.processed} de ${progress.total} pistas sin tags`
+                : progress?.phase === 'reading'
+                  ? `Leyendo ${progress.processed} de ${progress.total} archivos (${percent}%)`
+                  : 'Buscando archivos de audio…'}
             </div>
-            <progress max={100} value={progress?.phase === 'reading' ? percent : undefined} />
+            <progress
+              max={100}
+              value={
+                progress?.phase === 'reading'
+                  ? percent
+                  : progress?.phase === 'identifying' && progress.total > 0
+                    ? Math.round((progress.processed / progress.total) * 100)
+                    : undefined
+              }
+            />
             <div
               className="muted mono"
               style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
@@ -187,6 +206,68 @@ export function LibraryView({ onLibraryChanged }: Props): React.JSX.Element {
         )}
 
         {message && <div className="notice error">{message}</div>}
+
+        {pendingCandidates.length > 0 && pendingFolderId !== null && (
+          <div className="panel acoustid-review">
+            <h2>Coincidencias encontradas</h2>
+            <p>
+              AcoustID encontró {pendingCandidates.length} coincidencia
+              {pendingCandidates.length === 1 ? '' : 's'}. Revisa los datos antes de escribirlos.
+            </p>
+            <div className="acoustid-results">
+              {pendingCandidates.map((candidate) => (
+                <div className="acoustid-result" key={candidate.filePath}>
+                  <div className="mono" title={candidate.filePath}>
+                    {candidate.filePath}
+                  </div>
+                  <div>
+                    <b>{candidate.title ?? 'Título desconocido'}</b>
+                    <span className="muted">
+                      {' · '}
+                      {candidate.artist ?? 'Artista desconocido'} ·{' '}
+                      {candidate.album ?? 'Álbum desconocido'} · score{' '}
+                      {(candidate.score * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="acoustid-actions">
+              <button
+                className="primary"
+                onClick={() => {
+                  void (async () => {
+                    const writeResult = await window.api.writeAcoustId(
+                      pendingFolderId,
+                      pendingCandidates
+                    )
+                    if (writeResult.ok) {
+                      setMessage(
+                        `Metadatos escritos: ${writeResult.data.written}. Errores: ${writeResult.data.errors.length}.`
+                      )
+                      setPendingCandidates([])
+                      setPendingFolderId(null)
+                      await refresh()
+                      onLibraryChanged()
+                    } else {
+                      setMessage(writeResult.error)
+                    }
+                  })()
+                }}
+              >
+                Reescribir metadatos
+              </button>
+              <button
+                onClick={() => {
+                  setPendingCandidates([])
+                  setPendingFolderId(null)
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         {lastResult && (
           <div className={`notice ${lastResult.errors > 0 ? 'error' : 'ok'}`}>

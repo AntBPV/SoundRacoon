@@ -10,6 +10,7 @@ const HEADER_HEIGHT = 34
 /** sortKey null = columna informativa que no se puede ordenar. numeric = alineada a la derecha. */
 const COLUMNS: { sortKey: TrackSortKey | null; label: string; numeric?: boolean }[] = [
   { sortKey: null, label: '' },
+  { sortKey: null, label: 'AcoustID' },
   { sortKey: null, label: '#', numeric: true },
   { sortKey: null, label: 'Disco', numeric: true },
   { sortKey: 'title', label: 'Título' },
@@ -28,15 +29,18 @@ interface Props {
   version: number
   onSort: (key: TrackSortKey) => void
   onPlay: (track: TrackRow) => void
+  onIdentify: (track: TrackRow) => void
 }
 
 /** Las celdas de una pista, en el mismo orden que COLUMNS. */
 function TrackCells({
   row,
-  onPlay
+  onPlay,
+  onIdentify
 }: {
   row: TrackRow
   onPlay: (track: TrackRow) => void
+  onIdentify: (track: TrackRow) => void
 }): React.JSX.Element {
   const dash = <span className="trk-dim">—</span>
   return (
@@ -47,6 +51,13 @@ function TrackCells({
         aria-label={`Reproducir ${row.title ?? fileName(row.filePath)}`}
       >
         ▶
+      </button>
+      <button
+        className="trk-identify"
+        onClick={() => void onIdentify(row)}
+        title="Consultar en AcoustID"
+      >
+        ID
       </button>
       <span className="trk-num">{row.trackNo ?? dash}</span>
       <span className="trk-num">{row.discNo ?? dash}</span>
@@ -77,7 +88,13 @@ function TrackCells({
   )
 }
 
-export function TrackTable({ query, version, onSort, onPlay }: Props): React.JSX.Element {
+export function TrackTable({
+  query,
+  version,
+  onSort,
+  onPlay,
+  onIdentify
+}: Props): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null)
   // Rango de páginas que se ven en pantalla; lo actualiza la lista virtual al hacer scroll.
   const [visible, setVisible] = useState({ start: 0, end: 0 })
@@ -155,7 +172,7 @@ export function TrackTable({ query, version, onSort, onPlay }: Props): React.JSX
                 }}
               >
                 {row ? (
-                  <TrackCells row={row} onPlay={onPlay} />
+                  <TrackCells row={row} onPlay={onPlay} onIdentify={onIdentify} />
                 ) : (
                   <span className="trk-dim">…</span>
                 )}

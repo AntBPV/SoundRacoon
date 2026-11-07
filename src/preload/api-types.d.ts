@@ -17,7 +17,7 @@ interface FolderRow {
 }
 
 interface ScanProgress {
-  phase: 'discovering' | 'reading'
+  phase: 'discovering' | 'reading' | 'identifying'
   processed: number
   total: number
   currentFile: string | null
@@ -31,6 +31,7 @@ interface ScanResult {
   removed: number
   errors: number
   cancelled: boolean
+  acoustIdCandidates: AcoustIdCandidate[]
 }
 
 interface ScanErrorRow {
@@ -99,6 +100,29 @@ interface LibraryErrors {
   rows: LibraryErrorRow[]
 }
 
+interface AcoustIdLookup {
+  status: string
+  results: unknown[]
+  duration: number
+  fingerprint: string
+  candidate: AcoustIdCandidate | null
+}
+
+interface AcoustIdCandidate {
+  filePath: string
+  score: number
+  title: string | null
+  artist: string | null
+  album: string | null
+  track: number | null
+  trackCount: number | null
+}
+
+interface AcoustIdWriteResult {
+  written: number
+  errors: { filePath: string; message: string }[]
+}
+
 interface CatalogarApi {
   listFolders: () => Promise<IpcResult<FolderRow[]>>
   /** data es null si el usuario cierra el diálogo sin elegir nada. */
@@ -112,10 +136,14 @@ interface CatalogarApi {
   getTracks: (query: TrackQuery) => Promise<IpcResult<TrackPage>>
   /** Todos los archivos con error de todas las carpetas, sin importar cuándo se escanearon. */
   getAllScanErrors: () => Promise<IpcResult<LibraryErrors>>
+  /** Calcula la huella con fpcalc y consulta AcoustID; no modifica el archivo. */
+  lookupAcoustId: (filePath: string) => Promise<IpcResult<AcoustIdLookup>>
+  writeAcoustId: (
+    folderId: number | null,
+    candidates: AcoustIdCandidate[]
+  ) => Promise<IpcResult<AcoustIdWriteResult>>
   /** Lee una pista para crear una URL blob reproducible por el renderer. */
-  getTrackData: (
-    filePath: string
-  ) => Promise<{ data: Uint8Array; mimeType: string }>
+  getTrackData: (filePath: string) => Promise<{ data: Uint8Array; mimeType: string }>
   reportMediaError: (details: unknown) => void
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void
 }

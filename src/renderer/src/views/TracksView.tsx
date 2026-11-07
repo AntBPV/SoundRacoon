@@ -55,6 +55,27 @@ export function TracksView({
         : { sortBy: key, sortDir: 'asc' }
     )
 
+  const identifyTrack = async (track: TrackRow): Promise<void> => {
+    const result = await window.api.lookupAcoustId(track.filePath)
+    if (!result.ok) {
+      console.error(`[acoustid] No se pudo consultar ${track.filePath}: ${result.error}`)
+      return
+    }
+    if (!result.data.candidate) {
+      window.alert('AcoustID no encontró una coincidencia para esta pista.')
+      return
+    }
+    const candidate = result.data.candidate
+    const confirmed = window.confirm(
+      `Coincidencia encontrada:\n\n${candidate.title ?? 'Título desconocido'}\n${candidate.artist ?? 'Artista desconocido'}\n${candidate.album ?? 'Álbum desconocido'}\nScore: ${(candidate.score * 100).toFixed(1)}%\n\n¿Deseas reescribir los metadatos de esta pista?`
+    )
+    if (confirmed) {
+      const writeResult = await window.api.writeAcoustId(null, [candidate])
+      if (!writeResult.ok) console.error(`[acoustid] No se pudo escribir: ${writeResult.error}`)
+      else console.log(`[acoustid] Metadatos escritos para ${track.filePath}:`, writeResult.data)
+    }
+  }
+
   const sections: { id: Section; label: string; count: number | undefined }[] = [
     { id: 'all', label: 'Todas', count: stats?.tracks },
     { id: 'untagged', label: 'Sin tags', count: stats?.tracksWithoutTags },
@@ -95,7 +116,13 @@ export function TracksView({
       {section === 'errors' ? (
         <ErrorTable version={version} />
       ) : (
-        <TrackTable query={query} version={version} onSort={toggleSort} onPlay={onPlay} />
+        <TrackTable
+          query={query}
+          version={version}
+          onSort={toggleSort}
+          onPlay={onPlay}
+          onIdentify={identifyTrack}
+        />
       )}
     </div>
   )
