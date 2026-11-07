@@ -1,5 +1,5 @@
 import { getDb } from '../db'
-import { identifyUntaggedTracks } from '../acoustid'
+import { identifyUntaggedTracks, writeAcoustIdMetadata, type AcoustIdCandidate } from '../acoustid'
 import { scanFolder } from '../scanner/scanner'
 import { handle } from './handle'
 import { scanState } from './scan-state'
@@ -18,8 +18,9 @@ export function registerScanIpc(): void {
           if (!event.sender.isDestroyed()) event.sender.send('scan:progress', progress)
         }
       })
+      let acoustIdCandidates: AcoustIdCandidate[] = []
       if (!result.cancelled) {
-        await identifyUntaggedTracks(getDb(), folderId, {
+        acoustIdCandidates = await identifyUntaggedTracks(getDb(), folderId, {
           signal: controller.signal,
           onProgress: (progress) => {
             if (!event.sender.isDestroyed()) {
@@ -29,7 +30,7 @@ export function registerScanIpc(): void {
         })
       }
       if (controller.signal.aborted) result.cancelled = true
-      return result
+      return { ...result, acoustIdCandidates }
     } finally {
       scanState.current = null
     }
@@ -38,6 +39,17 @@ export function registerScanIpc(): void {
   handle('scan:cancel', () => {
     scanState.current?.controller.abort()
   })
+
+  handle(
+    'acoustid:write',
+    async (_event, arg: { folderId: number | null; candidates: AcoustIdCandidate[] }) => {
+      const result = writeAcoustIdMetadata(arg.candidates)
+      if (result.written > 0 && arg.folderId !== null) {
+        await scanFolder(getDb(), arg.folderId, { force: true })
+      }
+      return result
+    }
+  )
 
   // Errores del último escaneo de UNA carpeta (la pantalla de escaneo los muestra al terminar).
   handle('scan:errors', (_event, folderId: number) =>

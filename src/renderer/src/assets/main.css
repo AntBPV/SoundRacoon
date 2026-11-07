@@ -166,6 +166,29 @@ progress {
 .notice.ok {
   background: #25402c;
 }
+.acoustid-review {
+  margin-top: 14px;
+  padding: 14px;
+}
+.acoustid-review h2 {
+  margin-top: 0;
+}
+.acoustid-results {
+  max-height: 280px;
+  overflow: auto;
+  margin: 12px 0;
+}
+.acoustid-result {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--ev-c-gray-3);
+}
+.acoustid-result:last-child {
+  border-bottom: none;
+}
+.acoustid-actions {
+  display: flex;
+  gap: 8px;
+}
 .errors {
   max-height: 220px;
   overflow: auto;

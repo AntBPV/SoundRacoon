@@ -31,6 +31,7 @@ interface ScanResult {
   removed: number
   errors: number
   cancelled: boolean
+  acoustIdCandidates: AcoustIdCandidate[]
 }
 
 interface ScanErrorRow {
@@ -104,6 +105,22 @@ interface AcoustIdLookup {
   results: unknown[]
   duration: number
   fingerprint: string
+  candidate: AcoustIdCandidate | null
+}
+
+interface AcoustIdCandidate {
+  filePath: string
+  score: number
+  title: string | null
+  artist: string | null
+  album: string | null
+  track: number | null
+  trackCount: number | null
+}
+
+interface AcoustIdWriteResult {
+  written: number
+  errors: { filePath: string; message: string }[]
 }
 
 interface CatalogarApi {
@@ -121,6 +138,10 @@ interface CatalogarApi {
   getAllScanErrors: () => Promise<IpcResult<LibraryErrors>>
   /** Calcula la huella con fpcalc y consulta AcoustID; no modifica el archivo. */
   lookupAcoustId: (filePath: string) => Promise<IpcResult<AcoustIdLookup>>
+  writeAcoustId: (
+    folderId: number | null,
+    candidates: AcoustIdCandidate[]
+  ) => Promise<IpcResult<AcoustIdWriteResult>>
   /** Lee una pista para crear una URL blob reproducible por el renderer. */
   getTrackData: (filePath: string) => Promise<{ data: Uint8Array; mimeType: string }>
   reportMediaError: (details: unknown) => void
