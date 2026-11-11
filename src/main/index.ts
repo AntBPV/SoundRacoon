@@ -23,7 +23,7 @@ function loadEnvironment(): void {
     ? join(app.getPath('userData'), '.env')
     : join(process.cwd(), '.env')
   const result = dotenv.config({ path: envPath })
-  if (result.error && result.error.code !== 'ENOENT') {
+  if (result.error && (!('code' in result.error) || result.error.code !== 'ENOENT')) {
     console.error(`[config] No se pudo cargar ${envPath}:`, result.error.message)
   }
 }
