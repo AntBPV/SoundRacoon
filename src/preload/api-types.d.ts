@@ -123,6 +123,10 @@ interface AcoustIdWriteResult {
   errors: { filePath: string; message: string }[]
 }
 
+interface AcoustIdConfigStatus {
+  configured: boolean
+}
+
 interface CatalogarApi {
   listFolders: () => Promise<IpcResult<FolderRow[]>>
   /** data es null si el usuario cierra el diálogo sin elegir nada. */
@@ -142,6 +146,8 @@ interface CatalogarApi {
     folderId: number | null,
     candidates: AcoustIdCandidate[]
   ) => Promise<IpcResult<AcoustIdWriteResult>>
+  getAcoustIdConfigStatus: () => Promise<IpcResult<AcoustIdConfigStatus>>
+  saveAcoustIdApiKey: (apiKey: string) => Promise<IpcResult<void>>
   /** Lee una pista para crear una URL blob reproducible por el renderer. */
   getTrackData: (filePath: string) => Promise<{ data: Uint8Array; mimeType: string }>
   reportMediaError: (details: unknown) => void

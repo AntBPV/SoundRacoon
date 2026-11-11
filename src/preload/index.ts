@@ -17,6 +17,8 @@ const api = {
   lookupAcoustId: (filePath: string) => ipcRenderer.invoke('acoustid:lookup', filePath),
   writeAcoustId: (folderId: number | null, candidates: AcoustIdCandidate[]) =>
     ipcRenderer.invoke('acoustid:write', { folderId, candidates }),
+  getAcoustIdConfigStatus: () => ipcRenderer.invoke('config:acoustid-status'),
+  saveAcoustIdApiKey: (apiKey: string) => ipcRenderer.invoke('config:save-acoustid-key', apiKey),
   getTrackData: (filePath: string) => ipcRenderer.invoke('media:data', filePath),
   reportMediaError: (details: unknown) => {
     ipcRenderer.send('media:error', details)

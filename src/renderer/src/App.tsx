@@ -2,12 +2,14 @@ import { useCallback, useState } from 'react'
 import { PlayerBar } from './components/PlayerBar'
 import { LibraryView } from './views/LibraryView'
 import { TracksView } from './views/TracksView'
+import { SettingsView } from './views/SettingsView'
 
-type Tab = 'library' | 'tracks'
+type Tab = 'library' | 'tracks' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'library', label: 'Biblioteca' },
-  { id: 'tracks', label: 'Pistas' }
+  { id: 'tracks', label: 'Pistas' },
+  { id: 'settings', label: 'Configuración' }
 ]
 
 /**
@@ -43,6 +45,9 @@ function App(): React.JSX.Element {
       </main>
       <main className="view" hidden={tab !== 'tracks'}>
         <TracksView version={libraryVersion} onPlay={setActiveTrack} />
+      </main>
+      <main className="view" hidden={tab !== 'settings'}>
+        <SettingsView />
       </main>
       <PlayerBar track={activeTrack} />
     </>

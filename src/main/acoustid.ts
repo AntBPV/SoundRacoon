@@ -5,6 +5,7 @@ import { basename, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import type Database from 'better-sqlite3'
 import { File } from 'node-taglib-sharp'
+import { getAcoustIdApiKey } from './config'
 
 const execFileAsync = promisify(execFile)
 const ACOUSTID_URL = 'https://api.acoustid.org/v2/lookup'
@@ -130,9 +131,9 @@ function parseLookupResponse(
 }
 
 export async function lookupTrackWithAcoustId(filePath: string): Promise<AcoustIdLookup> {
-  const apiKey = process.env.ACOUSTID_API_KEY
+  const apiKey = await getAcoustIdApiKey()
   if (!apiKey) {
-    throw new Error('Falta configurar la variable de entorno ACOUSTID_API_KEY.')
+    throw new Error('Falta configurar la clave personal de AcoustID en Configuración.')
   }
   if (!filePath.trim()) {
     throw new Error('La ruta de la pista no puede estar vacía.')
