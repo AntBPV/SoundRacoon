@@ -202,3 +202,26 @@ progress {
 .errors li:last-child {
   border-bottom: none;
 }
+
+.settings-panel {
+  max-width: 620px;
+  padding: 18px;
+}
+.settings-panel h3 {
+  margin-bottom: 8px;
+}
+.settings-panel label {
+  display: block;
+  margin: 18px 0 6px;
+  font-size: 13px;
+}
+.settings-panel input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  color: var(--ev-c-text-1);
+  background: var(--color-background);
+  border: 1px solid var(--ev-c-gray-2);
+  border-radius: 6px;
+}

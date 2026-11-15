@@ -1,7 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { appendFileSync, promises as fs } from 'node:fs'
 import { extname, join } from 'path'
-import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { closeDb, initDb } from './db'
@@ -15,16 +14,6 @@ function logMedia(message: string): void {
     appendFileSync(logPath, line)
   } catch (error) {
     console.error('[media] Unable to write media log:', error)
-  }
-}
-
-function loadEnvironment(): void {
-  const envPath = app.isPackaged
-    ? join(app.getPath('userData'), '.env')
-    : join(process.cwd(), '.env')
-  const result = dotenv.config({ path: envPath })
-  if (result.error && (!('code' in result.error) || result.error.code !== 'ENOENT')) {
-    console.error(`[config] No se pudo cargar ${envPath}:`, result.error.message)
   }
 }
 
@@ -64,7 +53,6 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  loadEnvironment()
   initDb()
 
   registerIpc()
