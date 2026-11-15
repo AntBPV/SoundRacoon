@@ -27,6 +27,14 @@ The system does not provide a complete music-management suite. Lyrics, downloadi
 similarity or recommendation features, and a redesigned frontend are outside the current
 scope. Playback controls are present but incomplete, as described below.
 
+## Clarifications
+
+### Session 2026-11-15
+
+- Q: ¿La especificación debe enumerar explícitamente los formatos de audio actualmente
+  reconocidos por el escáner y el reproductor? → A: Sí, enumerarlos como comportamiento
+  observado: `.flac`, `.mp3`, `.ogg`, `.opus`, `.m4a` y `.wav`.
+
 ## User Roles and Capabilities
 
 ### Local music owner
@@ -195,7 +203,8 @@ play/pause, elapsed and total time, and seeking.
 - **FR-001**: The system MUST allow the user to register a folder through an explicit folder
   picker and MUST begin scanning it after registration.
 - **FR-002**: The system MUST recursively discover supported audio files inside registered
-  folders and MUST ignore unsupported file types.
+  folders and MUST ignore unsupported file types. The scanner currently recognizes `.flac`,
+  `.mp3`, `.ogg`, `.opus`, `.m4a`, and `.wav`.
 - **FR-003**: The system MUST read available title, artist, album, track, disc, year, duration,
   codec, lossless, bitrate, sample rate, bit depth, cover, and tag-status information.
 - **FR-004**: The system MUST persist registered folders, indexed tracks, normalized artist and
@@ -331,8 +340,8 @@ play/pause, elapsed and total time, and seeking.
 
 - The operator has read access to selected folders and, when writing metadata, write access to
   the affected files.
-- “Supported audio file” means the formats recognized by the current scanner and playback
-  handling, not every possible audio format.
+- “Supported audio file” means `.flac`, `.mp3`, `.ogg`, `.opus`, `.m4a`, or `.wav` as
+  recognized by the current scanner; playback support can still vary by file encoding.
 - AcoustID identification requires the user's own key, the bundled or configured fingerprint
   executable, and network availability.
 - This document describes the repository state inspected on 2026-11-15; it is not a roadmap
